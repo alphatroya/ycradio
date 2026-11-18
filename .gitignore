@@ -1,0 +1,4 @@
+.build/
+.swiftpm/
+Ycradio.app/
+.DS_Store
