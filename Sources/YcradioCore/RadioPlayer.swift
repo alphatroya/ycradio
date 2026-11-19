@@ -13,13 +13,19 @@ public final class RadioPlayer {
     }
 
     private let url: URL
-    private let player = AVPlayer()
+    /// How long a paused item is kept so a quick resume plays the buffer
+    /// instead of reconnecting to the live edge.
+    private let pauseGrace: Duration
+    let player = AVPlayer()
     private var wantsPlay = false
+    private var resumeFromBuffer = false
+    private var pauseGraceTask: Task<Void, Never>?
     private var timeControlObservation: NSKeyValueObservation?
     private var itemObservation: NSKeyValueObservation?
 
-    public init(url: URL = RadioPlayer.streamURL) {
+    public init(url: URL = RadioPlayer.streamURL, pauseGrace: Duration = .seconds(15)) {
         self.url = url
+        self.pauseGrace = pauseGrace
         player.automaticallyWaitsToMinimizeStalling = true
 
         timeControlObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in
@@ -36,16 +42,41 @@ public final class RadioPlayer {
         guard !wantsPlay else { return }
         wantsPlay = true
         state = .buffering
-        // Always connect again: a live stream resumed from a paused item
-        // replays from wherever it stopped instead of the live edge.
-        loadItem()
-        player.play()
+        if resumeFromBuffer, player.currentItem?.status == .readyToPlay {
+            // Still inside the pause timebox: play the kept buffer from where
+            // it stopped, which is instant compared to a fresh connection.
+            resumeFromBuffer = false
+            pauseGraceTask?.cancel()
+            player.play()
+        } else {
+            // Always connect again: a live stream resumed from a paused item
+            // replays from wherever it stopped instead of the live edge.
+            loadItem()
+            player.play()
+        }
     }
 
     public func pause() {
+        guard wantsPlay else { return }
         wantsPlay = false
         player.pause()
         state = .paused
+        resumeFromBuffer = true
+        pauseGraceTask?.cancel()
+        pauseGraceTask = Task { [weak self] in
+            guard let self else { return }
+            try? await Task.sleep(for: self.pauseGrace)
+            guard !Task.isCancelled else { return }
+            self.dropPausedItem()
+        }
+    }
+
+    /// After the timebox, release the paused item so the next play reconnects
+    /// at the live edge.
+    private func dropPausedItem() {
+        guard !wantsPlay else { return }
+        resumeFromBuffer = false
+        player.replaceCurrentItem(with: nil)
     }
 
     private func loadItem() {
