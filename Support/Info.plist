@@ -6,6 +6,8 @@
 	<string>Ycradio</string>
 	<key>CFBundleDisplayName</key>
 	<string>Ycradio</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>org.ycradio.app</string>
 	<key>CFBundleExecutable</key>

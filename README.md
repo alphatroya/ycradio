@@ -28,3 +28,4 @@ but media keys are more reliable from the `.app` bundle.
   yourclassical.org uses).
 - `Sources/Ycradio` – AppKit status item, SwiftUI track panel, media keys.
 - `Support/Info.plist` – bundle metadata used by `make app`.
+- `Support/AppIcon.icns` – app icon, drawn by `Support/MakeIcon.swift` (`make icon`).
