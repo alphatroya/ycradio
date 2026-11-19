@@ -17,7 +17,7 @@ public enum PlayerState: Equatable, Sendable {
     /// SF Symbol for the status item.
     public var symbolName: String {
         switch self {
-        case .playing: "play.fill"
+        case .playing: "music.note"
         case .buffering: "hourglass"
         case .paused: "pause.fill"
         }

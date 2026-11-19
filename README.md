@@ -3,7 +3,7 @@
 A macOS menu bar radio for
 [YourClassical Radio](https://ycradio.stream.publicradio.org/ycradio.aac).
 
-- Left click toggles play / pause. The icon shows the state: `play` (playing),
+- Left click toggles play / pause. The icon shows the state: `music.note` (playing),
   `hourglass` (buffering), `pause` (paused).
 - Media keys (play / pause / toggle) work through the Now Playing center.
 - Right click opens a menu with **Quit**.
