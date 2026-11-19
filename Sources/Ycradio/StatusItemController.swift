@@ -48,8 +48,20 @@ final class StatusItemController {
         let image = NSImage(systemSymbolName: state.symbolName, accessibilityDescription: state.accessibilityLabel)
         image?.isTemplate = true
         button.image = image
-        button.toolTip = "Ycradio — \(state.accessibilityLabel)"
-        button.setAccessibilityLabel("Ycradio, \(state.accessibilityLabel)")
+        updateLabels()
+    }
+
+    /// The track feed changes independently of the player state.
+    func updateTrack() {
+        updateLabels()
+    }
+
+    private func updateLabels() {
+        guard let button = statusItem.button else { return }
+        let state = player.state.accessibilityLabel
+        let track = player.state == .paused ? nil : nowPlaying.nowPlaying?.displayName
+        button.toolTip = ["Ycradio — \(state)", track].compactMap { $0 }.joined(separator: "\n")
+        button.setAccessibilityLabel(["Ycradio", state, track].compactMap { $0 }.joined(separator: ", "))
     }
 
     private func startLongPress() {

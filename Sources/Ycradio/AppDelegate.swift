@@ -15,7 +15,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         mediaKeys.install(player: player)
         mediaKeys.update(player.state)
 
-        nowPlaying.onChange = { [weak self] in self?.mediaKeys.update(title: $0.displayName) }
+        nowPlaying.onChange = { [weak self] in
+            self?.statusItem?.updateTrack()
+            self?.mediaKeys.update(title: $0.displayName)
+        }
         player.onChange = { [weak self] state in
             guard let self else { return }
             self.statusItem?.update(state)

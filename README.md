@@ -6,6 +6,7 @@ A macOS menu bar radio for
 - Left click toggles play / pause. The icon shows the state: `music.note` (playing),
   `hourglass` (buffering), `pause` (paused).
 - Media keys (play / pause / toggle) work through the Now Playing center.
+- Hovering the icon shows the state and, while playing, the current track.
 - Right click opens a menu with **Quit**.
 - Long press (0.45 s) shows the current track in a small floating panel.
 
