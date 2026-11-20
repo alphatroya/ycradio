@@ -8,7 +8,7 @@ struct RadioPlayerPauseTests {
     private static let sound = URL(fileURLWithPath: "/System/Library/Sounds/Glass.aiff")
 
     private func playing(_ grace: Duration) async -> (RadioPlayer, AVPlayerItem) {
-        let player = RadioPlayer(url: Self.sound, pauseGrace: grace)
+        let player = RadioPlayer(stream: RadioStream(id: "test", name: "Test", url: Self.sound), pauseGrace: grace)
         player.play()
         let item = player.player.currentItem!
         for _ in 0..<50 where item.status != .readyToPlay {

@@ -2,8 +2,6 @@ import AVFoundation
 
 @MainActor
 public final class RadioPlayer {
-    nonisolated public static let streamURL = URL(string: "https://ycradio.stream.publicradio.org/ycradio.aac")!
-
     public var onChange: ((PlayerState) -> Void)?
     public private(set) var state: PlayerState = .paused {
         didSet {
@@ -12,7 +10,7 @@ public final class RadioPlayer {
         }
     }
 
-    private let url: URL
+    public private(set) var stream: RadioStream
     /// How long a paused item is kept so a quick resume plays the buffer
     /// instead of reconnecting to the live edge.
     private let pauseGrace: Duration
@@ -23,14 +21,29 @@ public final class RadioPlayer {
     private var timeControlObservation: NSKeyValueObservation?
     private var itemObservation: NSKeyValueObservation?
 
-    public init(url: URL = RadioPlayer.streamURL, pauseGrace: Duration = .seconds(15)) {
-        self.url = url
+    public init(stream: RadioStream = .saved(), pauseGrace: Duration = .seconds(15)) {
+        self.stream = stream
         self.pauseGrace = pauseGrace
         player.automaticallyWaitsToMinimizeStalling = true
 
         timeControlObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in
             let status = player.timeControlStatus
             Task { @MainActor in self?.apply(status) }
+        }
+    }
+
+    /// Switches the station, keeping the play request: playing keeps playing
+    /// from the new stream, a paused player stays paused without a stale item.
+    public func select(_ stream: RadioStream) {
+        guard stream != self.stream else { return }
+        self.stream = stream
+        pauseGraceTask?.cancel()
+        resumeFromBuffer = false
+        if wantsPlay {
+            loadItem()
+            player.play()
+        } else {
+            player.replaceCurrentItem(with: nil)
         }
     }
 
@@ -80,7 +93,7 @@ public final class RadioPlayer {
     }
 
     private func loadItem() {
-        let item = AVPlayerItem(url: url)
+        let item = AVPlayerItem(url: stream.url)
         itemObservation = item.observe(\.status, options: [.new]) { [weak self] item, _ in
             guard item.status == .failed else { return }
             Task { @MainActor in self?.retryAfterFailure() }

@@ -53,12 +53,26 @@ public final class NowPlayingClient {
     public private(set) var nowPlaying: NowPlaying?
     public var onChange: ((NowPlaying) -> Void)?
 
-    private let url: URL
+    private var stream: RadioStream
     private var socket: URLSessionWebSocketTask?
     private var task: Task<Void, Never>?
 
-    public init(url: URL = URL(string: "wss://nowplayingv2.publicradio.org/playlist/classical-24/v2")!) {
-        self.url = url
+    public init(stream: RadioStream = .saved()) {
+        self.stream = stream
+    }
+
+    private var url: URL {
+        URL(string: "wss://nowplayingv2.publicradio.org/playlist/\(stream.id)/v2")!
+    }
+
+    /// Follows the player's stream: reconnects the feed if it is running.
+    public func select(_ stream: RadioStream) {
+        guard stream != self.stream else { return }
+        let wasRunning = task != nil
+        stop()
+        self.stream = stream
+        nowPlaying = nil
+        if wasRunning { start() }
     }
 
     public func start() {

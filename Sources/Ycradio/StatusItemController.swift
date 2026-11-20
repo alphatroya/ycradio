@@ -36,6 +36,15 @@ final class StatusItemController {
             return event
         }
 
+        menu.autoenablesItems = false
+        for stream in RadioStream.all {
+            let item = NSMenuItem(title: stream.name, action: #selector(selectStream(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = stream
+            item.state = stream == player.stream ? .on : .off
+            menu.addItem(item)
+        }
+        menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Ycradio",
                                 action: #selector(NSApplication.terminate(_:)),
                                 keyEquivalent: "q"))
@@ -60,8 +69,8 @@ final class StatusItemController {
         guard let button = statusItem.button else { return }
         let state = player.state.accessibilityLabel
         let track = player.state == .paused ? nil : nowPlaying.nowPlaying?.displayName
-        button.toolTip = ["Ycradio — \(state)", track].compactMap { $0 }.joined(separator: "\n")
-        button.setAccessibilityLabel(["Ycradio", state, track].compactMap { $0 }.joined(separator: ", "))
+        button.toolTip = ["Ycradio — \(player.stream.name)", state, track].compactMap { $0 }.joined(separator: "\n")
+        button.setAccessibilityLabel(["Ycradio", player.stream.name, state, track].compactMap { $0 }.joined(separator: ", "))
     }
 
     private func startLongPress() {
@@ -90,8 +99,20 @@ final class StatusItemController {
     private func showMenu() {
         longPressWork?.cancel()
         guard let button = statusItem.button else { return }
+        for item in menu.items {
+            guard let stream = item.representedObject as? RadioStream else { continue }
+            item.state = stream == player.stream ? .on : .off
+        }
         NSApp.activate(ignoringOtherApps: true)
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 4), in: button)
+    }
+
+    @objc private func selectStream(_ sender: NSMenuItem) {
+        guard let stream = sender.representedObject as? RadioStream else { return }
+        player.select(stream)
+        nowPlaying.select(stream)
+        stream.save()
+        updateLabels()
     }
 
     private func showTrack() {
